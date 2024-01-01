@@ -5,7 +5,7 @@ const axios = require('axios')
 // AAA JUST USE CONFIG.JSON
 // No, grow up
 require('dotenv').config()
-const pterodactyl_url = "https://panel.lighthouse-servers.com";
+const pterodactyl_url = process.env.PANEL_URL;
 const apiKey = process.env.API_KEY;
 
 
@@ -202,48 +202,53 @@ module.exports = {
 
                 // Check if there are at least two unassigned allocations
                 if (filtered_allocations.length >= 2) {
-                    // console.log(`First two unassigned allocations next to each other: ${filtered_allocations[0].attributes.port} and ${filtered_allocations[1].attributes.port}`);
-
-                    // Extract the first two unassigned allocations
-                    const allocation_1 = filtered_allocations[0].attributes.id;
-                    const allocation_2 = filtered_allocations[1].attributes.id;
-
-                    // Create a server for the user
-                    const data_create_server = {
-                        "name": `${first_name} | Barotrauma`,
-                        "user": user_id,
-                        "egg": 44,
-                        "docker_image": "ghcr.io/milord-thatonemodder/trusted-seas-barotrauma-pterodactyl:main",
-                        "startup": "./mod_manager.sh && ./custom_script.sh && export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH:$PWD/linux64\" && port={{SERVER_PORT}} && ./DedicatedServer -port $port -queryport $(( $port + 1 ))",
-                        "environment": {
-                            "SRCDS_APPID": "1026340",
-                            "AUTO_UPDATE": "1"
-                        },
-                        "limits": {
-                            "memory": 4096,
-                            "swap": 0,
-                            "disk": 0,
-                            "io": 500,
-                            "cpu": 0
-                        },
-                        "feature_limits": {
-                            "databases": 0,
-                            "backups": 0
-                        },
-                        "allocation": {
-                            "default": allocation_1,
-                            "additional": [
-                                allocation_2
-                            ]
+                    // Find consecutive pairs of allocations
+                    const consecutive_pairs = [];
+                    for (let i = 0; i < filtered_allocations.length - 1; i++) {
+                        if (filtered_allocations[i].attributes.port + 1 === filtered_allocations[i + 1].attributes.port) {
+                            consecutive_pairs.push([filtered_allocations[i].attributes.id, filtered_allocations[i + 1].attributes.id]);
                         }
-                    };
+                    }
+                    if (consecutive_pairs.length > 0) {
+                        // Use the first consecutive pair of allocations
+                        const [allocation_1, allocation_2] = consecutive_pairs[0];
+                        // Create a server for the user
+                        const data_create_server = {
+                            "name": `${first_name} | Barotrauma`,
+                            "user": user_id,
+                            "egg": 44,
+                            "docker_image": "ghcr.io/milord-thatonemodder/trusted-seas-barotrauma-pterodactyl:main",
+                            "startup": "./mod_manager.sh && ./custom_script.sh && export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH:$PWD/linux64\" && port={{SERVER_PORT}} && ./DedicatedServer -port $port -queryport $(( $port + 1 ))",
+                            "environment": {
+                                "SRCDS_APPID": "1026340",
+                                "AUTO_UPDATE": "1"
+                            },
+                            "limits": {
+                                "memory": 4096,
+                                "swap": 0,
+                                "disk": 0,
+                                "io": 500,
+                                "cpu": 0
+                            },
+                            "feature_limits": {
+                                "databases": 0,
+                                "backups": 0
+                            },
+                            "allocation": {
+                                "default": allocation_1,
+                                "additional": [
+                                    allocation_2
+                                ]
+                            }
+                        };
 
-                    const response_create_server = await axios.post(url_create_server, data_create_server, { headers });
+                        const response_create_server = await axios.post(url_create_server, data_create_server, { headers });
 
-                    if (response_create_server.status >= 200 && response_create_server.status < 300) {
-                        interaction.channel.send({ embeds: [embedSuccess] });
-                    } else {
-                        interaction.followUp("Failed to create server.");
+                        if (response_create_server.status >= 200 && response_create_server.status < 300) {
+                            interaction.channel.send({ embeds: [embedSuccess] });
+                        } else {
+                            interaction.followUp("Failed to create server.");
+                        }
                     }
                 } else {
                     interaction.channel.send({ embeds: [embedNoAllocations] });
