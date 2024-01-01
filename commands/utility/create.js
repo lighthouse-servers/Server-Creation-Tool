@@ -221,7 +221,11 @@ module.exports = {
                             "startup": "./mod_manager.sh && ./custom_script.sh && export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH:$PWD/linux64\" && port={{SERVER_PORT}} && ./DedicatedServer -port $port -queryport $(( $port + 1 ))",
                             "environment": {
                                 "SRCDS_APPID": "1026340",
-                                "AUTO_UPDATE": "1"
+                                "AUTO_UPDATE": "1",
+                                "SERVER_NAME_PREFIX": "Lighthouse Servers",
+                                "CAN_BE_PASSWORDED": "0",
+                                "CAN_BE_PRIVATE": "0",
+                                "SERVER_REMOVE_MODS": "0"  
                             },
                             "limits": {
                                 "memory": 4096,
